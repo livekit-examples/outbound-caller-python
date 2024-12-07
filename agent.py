@@ -3,8 +3,9 @@ from __future__ import annotations
 import asyncio
 import logging
 from dotenv import load_dotenv
+import json
 from time import perf_counter
-
+from typing import Annotated
 from livekit import rtc, api
 from livekit.agents import (
     AutoSubscribe,
@@ -28,8 +29,8 @@ logger.setLevel(logging.INFO)
 _default_instructions = (
     "You are a scheduling assistant for a dental practice. Your interface with user will be voice."
     "You will be on a call with a patient who has an upcoming appointment. Your goal is to confirm the appointment details."
+    "As a customer service representative, you will be polite and professional at all times. Allow user to end the conversation."
 )
-
 
 async def entrypoint(ctx: JobContext):
     global _default_instructions
@@ -58,12 +59,12 @@ async def entrypoint(ctx: JobContext):
     # start the agent, either a VoicePipelineAgent or MultimodalAgent
     # this can be started before the user picks up. The agent will only start
     # speaking once the user answers the call.
-    run_voice_pipeline_agent(ctx, participant, instructions)
-    # run_multimodal_agent(ctx, participant)
+    #run_voice_pipeline_agent(ctx, participant, instructions)
+    run_multimodal_agent(ctx, participant, instructions)
 
-    # in addition, you can monitor
+    # in addition, you can monitor the call status separately
     start_time = perf_counter()
-    while perf_counter() - start_time < 15:
+    while perf_counter() - start_time < 30:
         call_status = participant.attributes.get("sip.callStatus")
         if call_status == "active":
             logger.info("user has picked up")
@@ -87,13 +88,54 @@ class CallActions(llm.FunctionContext):
     """
     Detect user intent and perform actions
     """
-    @llm.ai_callable
+
+    def __init__(self, *, api: api.LiveKitAPI, participant: rtc.RemoteParticipant, room: rtc.Room):
+        super().__init__()
+
+        self.api = api
+        self.participant = participant
+        self.room = room
+
+    async def hangup(self):
+        try:
+            await self.api.room.remove_participant(api.RoomParticipantIdentity(
+                room=self.room.name,
+                identity=self.participant.identity,
+            ))
+        except Exception as e:
+            # it's possible that the user has already hung up, this error can be ignored
+            logger.info(f"received error while ending call: {e}")
+
+    @llm.ai_callable()
     async def end_call(self):
         """Called when the user wants to end the call"""
-        call_ctx = AgentCallContext.get_current()
-        # API will use LIVEKIT_URL, LIVEKIT_API_KEY, and LIVEKIT_API_SECRET from environment variables
-        lkapi = api.LiveKitAPI()
-        #await lkapi.room.remove_participant()
+        logger.info(f"ending the call for {self.participant.identity}")
+        await self.hangup()
+
+    @llm.ai_callable()
+    async def look_up_availability(self,
+                                  date: Annotated[str, "The date of the appointment to check availability for"],
+                                  ):
+        """Called when the user asks about alternative appointment availability"""
+        logger.info(f"looking up availability for {self.participant.identity} on {date}")
+        return json.dumps({
+            "available_times": ["1pm", "2pm", "3pm"],
+        })
+
+    @llm.ai_callable()
+    async def confirm_appointment(self,
+                                  date: Annotated[str, "date of the appointment"],
+                                  time: Annotated[str, "time of the appointment"],
+                                  ):
+        """Called when the user confirms their appointment on a specific date. Use this tool only when they are certain about the date and time."""
+        logger.info(f"confirming appointment for {self.participant.identity} on {date} at {time}")
+        return "reservation confirmed"
+
+    @llm.ai_callable()
+    async def detected_answering_machine(self):
+        """Called when the call reaches voicemail. Use this tool AFTER you hear the voicemail greeting"""
+        logger.info(f"detected answering machine for {self.participant.identity}")
+        await self.hangup()
 
 
 def run_voice_pipeline_agent(ctx: JobContext, participant: rtc.RemoteParticipant, instructions: str):
@@ -111,7 +153,7 @@ def run_voice_pipeline_agent(ctx: JobContext, participant: rtc.RemoteParticipant
         tts=openai.TTS(),
         turn_detector=turn_detector.EOUModel(),
         chat_ctx=initial_ctx,
-        fnc_ctx=CallActions(),
+        fnc_ctx=CallActions(api=ctx.api, participant=participant, room=ctx.room),
     )
 
     agent.start(ctx.room, participant)
@@ -126,18 +168,9 @@ def run_multimodal_agent(ctx: JobContext, participant: rtc.RemoteParticipant, in
     )
     assistant = MultimodalAgent(
         model=model,
-        fnc_ctx=CallActions(),
+        fnc_ctx=CallActions(api=ctx.api, participant=participant, room=ctx.room),
     )
     assistant.start(ctx.room, participant)
-
-    # session = model.sessions[0]
-    # session.conversation.item.create(
-    #     llm.ChatMessage(
-    #         role="assistant",
-    #         content="Please begin the interaction with the user in a manner consistent with your instructions.",
-    #     )
-    # )
-    # session.response.create()
 
 
 def prewarm(proc: JobProcess):

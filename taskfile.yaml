@@ -1,0 +1,38 @@
+version: "3"
+output: interleaved
+dotenv: [".env.local"]
+
+tasks:
+  post_create:
+    desc: "Runs after this template is instantiated as a Sandbox or Bootstrap"
+    cmds:
+      - echo -e "To setup and run the agent:\r\n"
+      - echo -e "\tcd {{.ROOT_DIR}}\r"
+      - echo -e "\tpython3 -m venv venv\r"
+      - platforms: [darwin, linux]
+        cmd: echo -e "\tsource venv/bin/activate\r"
+      - platforms: [windows]
+        cmd: echo -e "\tpowershell venv/Scripts/Activate.ps1\r"
+      - echo -e "\tpip install -r requirements.txt\r"
+      - echo -e "\tpython3 agent.py download-files\r"
+      - echo -e "\tpython3 agent.py dev\r\n"
+
+  install:
+    desc: "Bootstrap application for local development"
+    cmds:
+      - "python3 -m venv venv"
+      - platforms: [darwin, linux]
+        cmd: "source venv/bin/activate"
+      - platforms: [windows]
+        cmd: "powershell venv/Scripts/Activate.ps1"
+      - "pip install -r requirements.txt"
+      - "python3 agent.py download-files"
+
+  dev:
+    interactive: true
+    cmds:
+      - platforms: [darwin, linux]
+        cmd: "source venv/bin/activate"
+      - platforms: [windows]
+        cmd: "powershell venv/Scripts/Activate.ps1"
+      - "python3 agent.py dev"

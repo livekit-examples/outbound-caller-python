@@ -1,6 +1,16 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:recommended"
-  ]
+  "extends": ["config:recommended"],
+  "packageRules": [
+    {
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "automerge": true
+    }
+  ],
+  "pip": {
+    "enabled": true,
+    "fileMatch": ["(^|/)requirements\\.txt$"]
+  },
+  "ignoreDeps": ["pip", "setuptools", "wheel"],
+  "dependencyDashboard": true
 }
