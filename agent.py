@@ -81,9 +81,11 @@ async def entrypoint(ctx: JobContext):
             # an extension or enter a PIN.
             # during DTMF dialing, the participant will be in the "automation" state
             pass
-        elif call_status == "hangup":
-            # user hung up, we'll exit the job
-            logger.info("user hung up, exiting job")
+        elif participant.disconnect_reason == rtc.DisconnectReason.USER_REJECTED:
+            logger.info("user rejected the call, exiting job")
+            break
+        elif participant.disconnect_reason == rtc.DisconnectReason.USER_UNAVAILABLE:
+            logger.info("user did not pick up, exiting job")
             break
         await asyncio.sleep(0.1)
 
@@ -132,7 +134,7 @@ class CallActions(llm.FunctionContext):
         logger.info(
             f"looking up availability for {self.participant.identity} on {date}"
         )
-        asyncio.sleep(3)
+        await asyncio.sleep(3)
         return json.dumps(
             {
                 "available_times": ["1pm", "2pm", "3pm"],
