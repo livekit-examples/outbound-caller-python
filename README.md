@@ -35,6 +35,7 @@ This example demonstrates the following features:
 Clone the repository and install dependencies to a virtual environment:
 
 ```shell
+git clone https://github.com/livekit-examples/outbound-caller-python.git
 cd outbound-caller-python
 python3 -m venv venv
 source venv/bin/activate
