@@ -80,12 +80,7 @@ class OutboundCaller(Agent):
         transfer_to = self.dial_info["transfer_to"]
         logger.info(f"transferring call to {transfer_to}")
 
-        # clear any existing speech
-        # NOTE: this currently prints: "waiting for function call to finish before fully cancelling"
-        ctx.session.interrupt()
-
         # let the message play fully before transferring
-        # NOTE: this also fails: "RuntimeError: another reply is already in progress"
         await ctx.session.generate_reply(
             instructions="let the user know you'll be transferring them"
         )
@@ -96,7 +91,7 @@ class OutboundCaller(Agent):
                 api.TransferSIPParticipantRequest(
                     room_name=job_ctx.room.name,
                     participant_identity=self.participant.identity,
-                    transfer_to=transfer_to,
+                    transfer_to=f"tel:{transfer_to}",
                 )
             )
 
@@ -226,7 +221,8 @@ async def entrypoint(ctx: JobContext):
         agent.set_participant(participant)
 
     except api.TwirpError as e:
-        logger.error(f"error creating SIP participant: {e}")
+        # sip error code is stored in e.metadata["sip_status"]
+        logger.error(f"error creating SIP participant: {e}, {e.metadata}")
         ctx.shutdown()
 
 
