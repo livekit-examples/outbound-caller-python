@@ -78,6 +78,9 @@ class OutboundCaller(Agent):
         """Transfer the call to a human agent, called after confirming with the user"""
 
         transfer_to = self.dial_info["transfer_to"]
+        if not transfer_to:
+            return "cannot transfer call"
+
         logger.info(f"transferring call to {transfer_to}")
 
         # let the message play fully before transferring
@@ -183,6 +186,7 @@ async def entrypoint(ctx: JobContext):
         turn_detection=turn_detector.EOUModel(),
         vad=silero.VAD.load(),
         stt=deepgram.STT(),
+        # you can also use OpenAI's TTS with openai.TTS()
         tts=cartesia.TTS(),
         llm=openai.LLM(model="gpt-4o"),
         # you can also use a speech-to-speech model like OpenAI's Realtime API
@@ -221,8 +225,11 @@ async def entrypoint(ctx: JobContext):
         agent.set_participant(participant)
 
     except api.TwirpError as e:
-        # sip error code is stored in e.metadata["sip_status"]
-        logger.error(f"error creating SIP participant: {e}, {e.metadata}")
+        logger.error(
+            f"error creating SIP participant: {e.message}, "
+            f"SIP status: {e.metadata.get('sip_status_code')} "
+            f"{e.metadata.get('sip_status')}"
+        )
         ctx.shutdown()
 
 
