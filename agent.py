@@ -16,8 +16,6 @@ from livekit.agents import (
     RunContext,
     get_job_context,
     cli,
-    RoomInputOptions,
-    RoomIO,
     WorkerOptions,
 )
 from livekit.plugins import (
@@ -57,16 +55,12 @@ class OutboundCaller(Agent):
             """
         )
         # keep reference to the participant for transfers
-        self.participant_identity: str | None = None
+        self.participant: rtc.RemoteParticipant | None = None
 
         self.dial_info = dial_info
 
-    def set_participant(self, participant: rtc.RemoteParticipant | str):
-        self.participant_identity = (
-            participant.identity
-            if isinstance(participant, rtc.RemoteParticipant)
-            else participant
-        )
+    def set_participant(self, participant: rtc.RemoteParticipant):
+        self.participant = participant
 
     async def hangup(self):
         """Helper function to hang up the call by deleting the room"""
@@ -98,7 +92,7 @@ class OutboundCaller(Agent):
             await job_ctx.api.sip.transfer_sip_participant(
                 api.TransferSIPParticipantRequest(
                     room_name=job_ctx.room.name,
-                    participant_identity=self.participant_identity,
+                    participant_identity=self.participant.identity,
                     transfer_to=f"tel:{transfer_to}",
                 )
             )
@@ -114,7 +108,7 @@ class OutboundCaller(Agent):
     @function_tool()
     async def end_call(self, ctx: RunContext):
         """Called when the user wants to end the call"""
-        logger.info(f"ending the call for {self.participant_identity}")
+        logger.info(f"ending the call for {self.participant.identity}")
 
         # let the agent finish speaking
         current_speech = ctx.session.current_speech
@@ -135,7 +129,7 @@ class OutboundCaller(Agent):
             date: The date of the appointment to check availability for
         """
         logger.info(
-            f"looking up availability for {self.participant_identity.identity} on {date}"
+            f"looking up availability for {self.participant.identity} on {date}"
         )
         await asyncio.sleep(3)
         return {
@@ -157,15 +151,15 @@ class OutboundCaller(Agent):
             time: The time of the appointment
         """
         logger.info(
-            f"confirming appointment for {self.participant_identity} on {date} at {time}"
+            f"confirming appointment for {self.participant.identity} on {date} at {time}"
         )
         return "reservation confirmed"
 
-    @function_tool()
-    async def detected_answering_machine(self, ctx: RunContext):
-        """Called when the call reaches voicemail. Use this tool AFTER you hear the voicemail greeting"""
-        logger.info(f"detected answering machine for {self.participant.identity}")
-        await self.hangup()
+    # @function_tool()
+    # async def detected_answering_machine(self, ctx: RunContext):
+    #     """Called when the call reaches voicemail. Use this tool AFTER you hear the voicemail greeting"""
+    #     logger.info(f"detected answering machine for {self.participant.identity}")
+    #     await self.hangup()
 
 
 async def entrypoint(ctx: JobContext):
@@ -198,19 +192,9 @@ async def entrypoint(ctx: JobContext):
         # llm=openai.realtime.RealtimeModel()
     )
 
-    # start the room io first before dialing, to ensure that when the user picks up
+    # start the session first before dialing, to ensure that when the user picks up
     # the agent does not miss anything the user says
-    room_io = RoomIO(
-        agent_session=session,
-        room=ctx.room,
-        # (optional) specify the participant identity to listen to
-        participant=participant_identity,
-        input_options=RoomInputOptions(
-            # enable Krisp background voice and noise removal
-            # noise_cancellation=noise_cancellation.BVC(),
-        ),
-    )
-    participant_joined = asyncio.create_task(room_io.start())
+    session_started = asyncio.create_task(session.start(agent=agent, room=ctx.room))
 
     # `create_sip_participant` starts dialing the user
     try:
@@ -225,12 +209,12 @@ async def entrypoint(ctx: JobContext):
             )
         )
 
-        # a participant phone user is now available
-        await participant_joined
-        agent.set_participant(participant_identity)
-        logger.info(f"participant joined: {participant_identity}")
+        # wait for the agent session start and participant join
+        await session_started
+        participant = await ctx.wait_for_participant(identity=participant_identity)
+        logger.info(f"participant joined: {participant.identity}")
 
-        await session.start(agent=agent)
+        agent.set_participant(participant)
 
     except api.TwirpError as e:
         logger.error(
