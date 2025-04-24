@@ -24,9 +24,9 @@ from livekit.plugins import (
     openai,
     cartesia,
     silero,
-    turn_detector,
     noise_cancellation,
 )
+from livekit.plugins.turn_detector.multilingual import MultilingualModel
 
 
 # load environment variables, this is optional, only used for local development
@@ -183,7 +183,7 @@ async def entrypoint(ctx: JobContext):
 
     # the following uses GPT-4o, Deepgram and Cartesia
     session = AgentSession(
-        turn_detection=turn_detector.EOUModel(),
+        turn_detection=MultilingualModel(),
         vad=silero.VAD.load(),
         stt=deepgram.STT(),
         # you can also use OpenAI's TTS with openai.TTS()
