@@ -155,11 +155,11 @@ class OutboundCaller(Agent):
         )
         return "reservation confirmed"
 
-    # @function_tool()
-    # async def detected_answering_machine(self, ctx: RunContext):
-    #     """Called when the call reaches voicemail. Use this tool AFTER you hear the voicemail greeting"""
-    #     logger.info(f"detected answering machine for {self.participant.identity}")
-    #     await self.hangup()
+    @function_tool()
+    async def detected_answering_machine(self, ctx: RunContext):
+        """Called when the call reaches voicemail. Use this tool AFTER you hear the voicemail greeting"""
+        logger.info(f"detected answering machine for {self.participant.identity}")
+        await self.hangup()
 
 
 async def entrypoint(ctx: JobContext):
