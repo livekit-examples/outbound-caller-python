@@ -17,6 +17,7 @@ from livekit.agents import (
     get_job_context,
     cli,
     WorkerOptions,
+    RoomInputOptions,
 )
 from livekit.plugins import (
     deepgram,
@@ -194,7 +195,16 @@ async def entrypoint(ctx: JobContext):
 
     # start the session first before dialing, to ensure that when the user picks up
     # the agent does not miss anything the user says
-    session_started = asyncio.create_task(session.start(agent=agent, room=ctx.room))
+    session_started = asyncio.create_task(
+        session.start(
+            agent=agent,
+            room=ctx.room,
+            room_input_options=RoomInputOptions(
+                # enable Krisp background voice and noise removal
+                # noise_cancellation=noise_cancellation.BVC(),
+            ),
+        )
+    )
 
     # `create_sip_participant` starts dialing the user
     try:
