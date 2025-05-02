@@ -201,7 +201,7 @@ async def entrypoint(ctx: JobContext):
             room=ctx.room,
             room_input_options=RoomInputOptions(
                 # enable Krisp background voice and noise removal
-                # noise_cancellation=noise_cancellation.BVC(),
+                noise_cancellation=noise_cancellation.BVCTelephony(),
             ),
         )
     )
