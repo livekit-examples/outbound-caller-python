@@ -68,5 +68,5 @@ You can dispatch an agent to make a call by using the `lk` CLI:
 lk dispatch create \
   --new-room \
   --agent-name outbound-caller \
-  --metadata '{"phone_number": "+1234567890", "transfer_to": "+9876543210}'
+  --metadata '{"phone_number": "+1234567890", "transfer_to": "+9876543210"}'
 ```
