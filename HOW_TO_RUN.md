@@ -28,8 +28,9 @@ You need to run **3 things** to use this system:
 **Terminal 1:**
 
 ```bash
-cd /d/Coding-Projects/outbound-caller-python
-python agent.py start
+cd /mnt/d/Coding-projects/outbound-caller-python-main
+source venv-wsl/bin/activate
+python3 agent.py start
 ```
 
 **What you should see:**
@@ -50,9 +51,9 @@ python agent.py start
 **Terminal 2:**
 
 ```bash
-cd /d/Coding-Projects/outbound-caller-python/voice-test
-pnpm install
-pnpm dev
+# Voice test sandbox not yet set up - create it with:
+# lk app create --template agent-starter-react
+# Then: cd voice-test && pnpm install && pnpm dev
 ```
 
 **What you should see:**
@@ -79,7 +80,7 @@ Next.js 14.x.x
 **Terminal 3:**
 
 ```bash
-cd /d/Coding-Projects/outbound-caller-python
+cd /mnt/d/Coding-projects/outbound-caller-python-main
 
 lk dispatch create \
   --new-room \
@@ -194,8 +195,9 @@ TWILIO_TO_NUMBER=+0987654321
 
      ```bash
      # In WSL2 terminal:
-     cd /mnt/d/Coding-Projects/outbound-caller-python
-     ./start-agent.sh start
+     cd /mnt/d/Coding-projects/outbound-caller-python-main
+     source venv-wsl/bin/activate
+     python3 agent.py start
      ```
 
   2. **Use Docker:** Run in a Linux container
