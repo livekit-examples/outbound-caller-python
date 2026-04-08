@@ -3,3 +3,6 @@ livekit-agents[openai,deepgram,cartesia,silero,turn_detector,anthropic]~=1.0
 livekit-plugins-noise-cancellation~=0.2
 python-dotenv~=1.0
 twilio~=9.3
+# Used by dispatch_from_excel.py to read leads spreadsheets.
+pandas~=2.2
+openpyxl~=3.1

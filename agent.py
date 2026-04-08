@@ -453,10 +453,11 @@ async def entrypoint(ctx: JobContext):
     dial_info = json.loads(ctx.job.metadata)
     participant_identity = phone_number = dial_info["phone_number"]
 
-    # Create the agent with personalized information
-    # In production, you would look up customer details from your database
+    # Create the agent with personalized information from the dispatch metadata.
+    # The bulk dispatcher (dispatch_from_excel.py) injects `name` per row so each
+    # call addresses the prospect by their actual first name.
     agent = OutboundCaller(
-        name="Jayden",  # TODO: Replace with database lookup
+        name=dial_info.get("name", "there"),
         appointment_time="",  # Not used for health insurance calls
         dial_info=dial_info,
     )
