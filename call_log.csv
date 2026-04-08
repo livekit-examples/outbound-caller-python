@@ -1,6 +1,0 @@
-timestamp,name,phone_number,status,dispatch_id,room,error
-2026-04-07T22:28:12,Jayden,+15555550101,dry_run,,outbound-15555550101-e1dc29,
-2026-04-07T22:28:12,Sarah,+15555550102,dry_run,,outbound-15555550102-ab2ba9,
-2026-04-07T22:28:12,Mike,+15555550103,dry_run,,outbound-15555550103-d428ae,
-2026-04-07T22:28:28,Chris,+15551234567,dry_run,,outbound-15551234567-f6964e,
-2026-04-07T22:28:28,Alex,+15555550202,dry_run,,outbound-15555550202-975ee4,
