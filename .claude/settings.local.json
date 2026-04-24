@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \"from livekit import api; print\\([x for x in dir\\(api\\) if ''ispatch'' in x.lower\\(\\) or ''AgentDispatch'' in x]\\)\")",
+      "Bash(python -c \"from livekit.api import LiveKitAPI; import inspect; lk = LiveKitAPI.__init__; print\\(inspect.signature\\(lk\\)\\)\")",
+      "Bash(python -c \"from livekit import api; print\\([m for m in dir\\(api.LiveKitAPI\\) if not m.startswith\\(''_''\\)]\\)\")",
+      "Bash(python -c \"from livekit import api; import inspect; print\\(inspect.signature\\(api.CreateAgentDispatchRequest.__init__\\)\\)\")",
+      "Bash(python -c \"from livekit import api; print\\([m for m in dir\\(api.agent_dispatch_service.AgentDispatchService\\) if not m.startswith\\(''_''\\)]\\)\")",
+      "Bash(python -m pip install pandas openpyxl)",
+      "Bash(python dispatch_from_excel.py leads_sample.csv --dry-run)",
+      "Bash(python -c \"import ast; ast.parse\\(open\\(''agent.py'', encoding=''utf-8''\\).read\\(\\)\\); print\\(''agent.py: syntax OK''\\)\")"
+    ]
+  }
+}
